@@ -21,9 +21,6 @@ namespace boids
 
         static public TextObject[] texts;
 
-        static float addD;
-        static float addN;
-
         static public void Init()
         {
             Window = new Window(1280, 720, "Boid Project");
@@ -74,12 +71,6 @@ namespace boids
                 {
                     Boids.Add(new Boid(Window.MousePosition));
                     spawnCounter = spawnTimeToWait;
-                }
-
-                if (DeltaTime != 0)
-                {
-                    addD += 0.0010f;
-                    addN += DeltaTime;
                 }
 
                 //UPDATE

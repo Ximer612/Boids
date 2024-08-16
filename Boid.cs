@@ -64,8 +64,7 @@ namespace boids
         {
             Vector2 alignment = GetAlignment(GetVisibleBoids(AlignmentRay));
             Vector2 cohesion = GetCohesion(GetVisibleBoids(CohesionRay));
-            Vector2 separation = GetSeparation1(GetVisibleBoids(SeparationRay));
-
+            Vector2 separation = GetSeparation(GetVisibleBoids(SeparationRay));
             
             //Movement
             Velocity = (Velocity + alignment * alignmentWeight + cohesion * cohesionWeight + separation * separationWeight*2).Normalized();
@@ -92,11 +91,12 @@ namespace boids
 
             return (averagePosition - Position).Normalized();
         }
-        public Vector2 GetSeparation1(List<Boid> boids)
+        public Vector2 GetSeparation(List<Boid> boids)
         {
             if (boids.Count < 1) return Vector2.Zero;
 
             //we have at least 1 boids
+
             Vector2 averagePosition = Vector2.Zero;
 
             for (int i = 0; i < boids.Count; i++)
@@ -108,51 +108,6 @@ namespace boids
             averagePosition.Normalize();
 
             return averagePosition;
-        }
-        public Vector2 GetSeparation2(List<Boid> boids)
-        {
-            if (boids.Count < 1) return Vector2.Zero;
-
-            //we have at least 1 boids
-            Vector2 averagePosition = Vector2.Zero;
-
-            // add the contribution of each neighbor towards me
-            foreach (Boid other in boids)
-            {
-                Vector2 towardsMe = new Vector2();
-                towardsMe = Position -  other.Position;
-
-                // force contribution will vary inversely proportional
-                if (towardsMe.Length > 0)
-                {
-
-                    // to distance or even the square of the distance
-                    averagePosition += towardsMe.Normalized() /  towardsMe.Length;
-                }
-            }
-
-            // return normalized vector
-            return averagePosition.Normalized();
-        }
-        public Vector2 GetSeparation3(List<Boid> Neighbors)
-        {
-            if (Neighbors.Count == 0) return Vector2.Zero;
-            float minDistance = 2000;
-            float avoidFactor = 6f;
-            Vector2 distance = Vector2.Zero;
-
-            for (int i = 0; i < Neighbors.Count; i++)
-            {
-                var vector2 = Neighbors[i].Position - Position;
-
-                if (vector2.LengthSquared < minDistance)
-                {
-                    distance -= vector2;
-                }
-            }
-            if (distance == Vector2.Zero) return Vector2.Zero;
-
-            return distance.Normalized() * avoidFactor;
         }
         public Vector2 GetAlignment(List<Boid> boids)
         {
@@ -167,7 +122,7 @@ namespace boids
                 averageForward += boids[i].Velocity;
             }
 
-            averageForward /= boids.Count; //serve?
+            averageForward /= boids.Count;
 
             averageForward.Normalize();
 
@@ -283,202 +238,5 @@ namespace boids
                 return;
             }
         }
-
-        /* METODI ROTTI
-         * 
-            //Velocity = Vector2.Lerp(Velocity, (Velocity + alignment * alignmentWeight + cohesion * cohesionWeight + separation * separationWeight*2).Normalized(),Game.DeltaTime * 2);
-         * 
-         * 
-        public void Cohesion()
-        {
-            List<Boid> boids = VisibleCohesionBoids();
-
-            if (boids.Count < 1) return;
-
-            Vector2 averagePosition = GetCohesion(boids);
-
-            float alpha = sprite.Rotation;
-
-            float beta = (float)Math.Atan2(averagePosition.Y, averagePosition.X);
-
-            float difference = beta - alpha;
-
-            sprite.Rotation += difference * Game.DeltaTime * 2;
-
-        }
-
-        public void Separation()
-        {
-            List<Boid> boids = VisibleSeparationBoids();
-
-            counterSeparation -= Game.DeltaTime;
-
-            if (boids.Count < 1) return;
-
-            if (counterSeparation > 0) return;
-
-            Vector2 averagePosition = GetSeparation(boids);//get's the opposite vector of the average vector
-
-            float alpha = sprite.Rotation;
-
-            //fix that shit below
-
-            float beta = (float)Math.Atan2(averagePosition.Y, averagePosition.X);
-
-            float difference = beta - alpha;
-
-            //Forward = averagePosition;
-            sprite.Rotation += difference * Game.DeltaTime * 500;
-
-            //flySpeed = 0;
-
-            counterSeparation = timeToSeparation;
-        }
-
-        public void Alignment()
-        {
-           // List<Boid> boids = VisibleAlignmentBoids();
-           List<Boid> boids = Game.Boids;
-
-            if (boids.Count < 1) return;
-
-            Vector2 averageForward = GetAlignment(boids);
-
-            float alpha = sprite.Rotation;
-
-            float beta = (float)Math.Atan2(averageForward.Y, averageForward.X);
-
-            float difference = beta - alpha;
-
-            //sprite.Rotation += difference * Game.DeltaTime;
-            //sprite.Rotation = difference;
-
-            Forward = averageForward;
-
-            /* double dot = Vector2.Dot(Forward, averageForward); // dot of the average forward of other boids
-
-             dot = MathHelper.Clamp(dot, -1, 1); //cosene of the dot
-
-             float angle = (float)Math.Acos(dot);
-             float oneDegree = MathHelper.DegreesToRadians(1);
-             float sign = Math.Sign(dot);
-
-             float X = Forward.X + (float)Math.Cos(angle) * Game.DeltaTime * sign;
-             float Y = Forward.Y + (float)Math.Sin(angle) * Game.DeltaTime * sign;
-
-             Forward = new Vector2(X,Y);
-        }*/
-        /*public List<Player> GetVisiblePlayers()
-        {
-            List<Player> players = ((PlayScene)Game.CurrentScene).Players;
-            List<Player> visiblePlayers = new List<Player>();
-
-            for (int i = 0; i < players.Count; i++)
-            {
-                if (!players[i].IsAlive) continue;
-
-                Vector2 dist = players[i].Position - this.Position;
-                if (dist.LengthSquared < VisionRay * VisionRay)
-                {
-                    float angleCos = Vector2.Dot(Forward, dist.Normalized());
-                    angleCos = MathHelper.Clamp(angleCos, -1, 1);
-
-                    float playerAngle = (float)Math.Acos(angleCos);
-                    if (playerAngle <= halfConeAngle)
-                    {
-                        visiblePlayers.Add(players[i]);
-                    }
-                }
-            }
-
-            return visiblePlayers;
-        }*/
-        /*
-         * 
-        public Vector2 GetSeparation1(List<Boid> boids)
-        {
-            if (boids.Count < 1) return Vector2.Zero;
-
-            //we have at least 1 boids
-            Vector2 averagePosition = Vector2.Zero;
-
-            for (int i = 0; i < boids.Count; i++)
-            {
-                averagePosition += boids[i].Position;
-            }
-
-            averagePosition /= boids.Count;
-
-            float angle = -(float)Math.Atan2(averagePosition.Y, averagePosition.X);
-
-            return new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle));
-        }
-         * 
-         * 
-         * 
-         * public List<Boid> VisibleAlignmentBoids()
-{
-    List<Boid> boids = Game.Boids;
-    List<Boid> visibleBoids = new List<Boid>();
-
-    for (int i = 0; i < boids.Count; i++)
-    {
-        if (boids[i] == this) continue;
-
-        Vector2 dist = boids[i].Position - Position;
-
-        float alignmentRaySquared = AlignmentRay * AlignmentRay;
-
-        if (dist.LengthSquared < alignmentRaySquared)
-        {
-            visibleBoids.Add(boids[i]);
-        }
-    }
-
-    return visibleBoids;
-}
-public List<Boid> VisibleCohesionBoids()
-{
-    List<Boid> boids = Game.Boids;
-    List<Boid> visibleBoids = new List<Boid>();
-
-    for (int i = 0; i < boids.Count; i++)
-    {
-        if (boids[i] == this) continue;
-
-        Vector2 dist = boids[i].Position - Position;
-
-        float cohesionRayRaySquared = CohesionRay * CohesionRay;
-
-        if (dist.LengthSquared < cohesionRayRaySquared)
-        {
-            visibleBoids.Add(boids[i]);
-        }
-    }
-
-    return visibleBoids;
-}
-public List<Boid> VisibleSeparationBoids()
-{
-    List<Boid> boids = Game.Boids;
-    List<Boid> visibleBoids = new List<Boid>();
-
-    for (int i = 0; i < boids.Count; i++)
-    {
-        if (boids[i] == this) continue;
-
-        Vector2 dist = boids[i].Position - Position;
-
-        float separationRaySquared = SeparationRay * SeparationRay;
-
-        if (dist.LengthSquared < separationRaySquared)
-        {
-            visibleBoids.Add(boids[i]);
-        }
-    }
-
-    return visibleBoids;
-}*/
-
     }
 }
